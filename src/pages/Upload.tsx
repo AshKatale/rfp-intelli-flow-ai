@@ -1,75 +1,36 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, UploadIcon, X, CheckCircle, FileUp, FilePlus, Clock } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { FileText, X, CheckCircle, FileUp, FilePlus, Clock, AlertCircle } from "lucide-react";
+import { useFileAttachment } from "@/utils/useFileAttachment"; // Import our new hook
 
-const Upload = () => {
+const UploadComponent = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [dragging, setDragging] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [uploadComplete, setUploadComplete] = useState(false);
-  const [fileName, setFileName] = useState("");
-  const { toast } = useToast();
+  const fileInputRef = useRef(null);
+  
+  // Use our new file attachment hook
+  const {
+    fileName,
+    fileSize,
+    dragging,
+    uploading,
+    uploadComplete,
+    uploadProgress,
+    uploadError,
+    formatFileSize,
+    handleDragOver,
+    handleDragLeave,
+    handleDrop,
+    handleFileChange,
+    resetAttachment
+  } = useFileAttachment();
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
-  };
-  
-  const handleDragOver = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(true);
-  };
-  
-  const handleDragLeave = () => {
-    setDragging(false);
-  };
-  
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    setDragging(false);
-    
-    const files = e.dataTransfer.files;
-    if (files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-  };
-  
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (files && files.length > 0) {
-      handleFileUpload(files[0]);
-    }
-  };
-  
-  const handleFileUpload = (file: File) => {
-    setFileName(file.name);
-    setUploading(true);
-    
-    setTimeout(() => {
-      setUploading(false);
-      setUploadComplete(true);
-      
-      toast({
-        title: "File uploaded successfully",
-        description: `${file.name} has been uploaded and is being processed.`,
-      });
-      
-      setTimeout(() => {
-        // In a real app, we would redirect to results page
-        // history.push('/dashboard');
-      }, 2000);
-    }, 2000);
-  };
-  
-  const resetUpload = () => {
-    setFileName("");
-    setUploadComplete(false);
   };
   
   const recentRfps = [
@@ -106,6 +67,16 @@ const Upload = () => {
             <p className="text-muted-foreground">Upload your RFP document for automated analysis</p>
           </div>
           
+          {/* Always render the hidden file input */}
+          <input 
+            type="file" 
+            id="file-upload" 
+            accept=".pdf,.doc,.docx,.txt" 
+            className="hidden" 
+            onChange={handleFileChange}
+            ref={fileInputRef}
+          />
+          
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2">
               <Card>
@@ -124,24 +95,22 @@ const Upload = () => {
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
+                      onClick={() => fileInputRef.current && fileInputRef.current.click()}
                     >
                       <div className="flex flex-col items-center">
                         <FileUp className="h-12 w-12 text-muted-foreground mb-4" />
                         <h3 className="text-lg font-medium mb-2">Drag and drop your file here</h3>
                         <p className="text-muted-foreground mb-6">or click to browse your files</p>
                         
-                        <input 
-                          type="file" 
-                          id="file-upload" 
-                          accept=".pdf,.doc,.docx,.txt" 
-                          className="hidden" 
-                          onChange={handleFileChange}
-                        />
-                        <label htmlFor="file-upload">
-                          <Button className="cursor-pointer">
-                            Browse Files
-                          </Button>
-                        </label>
+                        <Button 
+                          className="cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation(); // Prevent container onClick
+                            fileInputRef.current && fileInputRef.current.click();
+                          }}
+                        >
+                          Browse Files
+                        </Button>
                         
                         <div className="text-xs text-muted-foreground mt-4">
                           Supported formats: PDF, DOC, DOCX, TXT
@@ -158,7 +127,7 @@ const Upload = () => {
                           <div>
                             <div className="font-medium">{fileName}</div>
                             <div className="text-sm text-muted-foreground">
-                              Uploaded {new Date().toLocaleDateString()}
+                              {formatFileSize(fileSize)} • Uploaded {new Date().toLocaleDateString()}
                             </div>
                           </div>
                         </div>
@@ -166,20 +135,35 @@ const Upload = () => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={resetUpload}
+                          onClick={resetAttachment}
                         >
                           <X className="h-4 w-4" />
                         </Button>
                       </div>
                       
+                      {uploadError && (
+                        <div className="bg-red-50 border border-red-100 text-red-800 rounded-md p-4 flex items-center gap-3 mb-4">
+                          <AlertCircle className="h-5 w-5 text-red-500" />
+                          <div>
+                            <h4 className="font-medium">Upload Error</h4>
+                            <p className="text-sm text-red-600">
+                              {uploadError}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                      
                       {uploading ? (
                         <div className="mb-4">
                           <div className="mb-2 flex justify-between items-center">
                             <span className="text-sm font-medium">Uploading...</span>
-                            <span className="text-sm text-muted-foreground">50%</span>
+                            <span className="text-sm text-muted-foreground">{uploadProgress}%</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-2.5">
-                            <div className="bg-primary h-2.5 rounded-full w-1/2 animate-pulse"></div>
+                            <div 
+                              className="bg-primary h-2.5 rounded-full transition-all duration-300 ease-in-out" 
+                              style={{width: `${uploadProgress}%`}}
+                            ></div>
                           </div>
                         </div>
                       ) : uploadComplete ? (
@@ -195,11 +179,11 @@ const Upload = () => {
                       ) : null}
                       
                       <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
-                        <Button variant="outline" onClick={resetUpload}>
+                        <Button variant="outline" onClick={resetAttachment}>
                           Cancel
                         </Button>
                         <Link to="/dashboard">
-                          <Button>
+                          <Button disabled={uploading || !!uploadError}>
                             Continue to Analysis
                           </Button>
                         </Link>
@@ -265,4 +249,4 @@ const Upload = () => {
   );
 };
 
-export default Upload;
+export default UploadComponent;

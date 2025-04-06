@@ -1,37 +1,121 @@
-
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Link } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
-import { Button } from "@/components/ui/button"; // Custom Button
+import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { FileText, X, CheckCircle, FileUp, FilePlus, Clock, AlertCircle } from "lucide-react";
-import { useFileAttachment } from "@/utils/useFileAttachment"; // Import our new hook
+import { useToast } from "@/hooks/use-toast";
 
 const UploadComponent = () => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const fileInputRef = useRef(null);
+  const [file, setFile] = useState(null);
+  const [fileName, setFileName] = useState("");
+  const [fileSize, setFileSize] = useState(0);
+  const [dragging, setDragging] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [uploadComplete, setUploadComplete] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadError, setUploadError] = useState(null);
+  const { toast } = useToast();
   
-  // Use our new file attachment hook
-  const {
-    fileName,
-    fileSize,
-    dragging,
-    uploading,
-    uploadComplete,
-    uploadProgress,
-    uploadError,
-    formatFileSize,
-    handleDragOver,
-    handleDragLeave,
-    handleDrop,
-    handleFileChange,
-    resetAttachment
-  } = useFileAttachment();
+  // Create a ref for the file input
+  const fileInputRef = useRef(null);
 
   const toggleSidebar = () => {
     setIsSidebarOpen(!isSidebarOpen);
+  };
+  
+  // Explicitly create a function that opens the file dialog
+  const triggerFileInput = () => {
+    if (fileInputRef.current) {
+      fileInputRef.current.click();
+    }
+  };
+  
+  const handleDragOver = (e) => {
+    e.preventDefault();
+    setDragging(true);
+  };
+  
+  const handleDragLeave = () => {
+    setDragging(false);
+  };
+  
+  const handleDrop = (e) => {
+    e.preventDefault();
+    setDragging(false);
+    
+    const files = e.dataTransfer.files;
+    if (files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  };
+  
+  const handleFileChange = (e) => {
+    const files = e.target.files;
+    if (files && files.length > 0) {
+      handleFileUpload(files[0]);
+    }
+  };
+  
+  const handleFileUpload = (file) => {
+    // Set file information
+    setFile(file);
+    setFileName(file.name);
+    setFileSize(file.size);
+    setUploadError(null);
+    
+    // Simulate upload
+    simulateUpload(file);
+  };
+  
+  const simulateUpload = (file) => {
+    setUploading(true);
+    setUploadProgress(0);
+    
+    // Simulate file upload with progress
+    const totalTime = 2000; // 2 seconds for simulation
+    const interval = 100; // Update every 100ms
+    const steps = totalTime / interval;
+    let currentStep = 0;
+    
+    const progressInterval = setInterval(() => {
+      currentStep++;
+      const newProgress = Math.round((currentStep / steps) * 100);
+      setUploadProgress(newProgress);
+      
+      if (currentStep >= steps) {
+        clearInterval(progressInterval);
+        setUploading(false);
+        setUploadComplete(true);
+        
+        toast({
+          title: "File uploaded successfully",
+          description: `${file.name} has been uploaded and is being processed.`,
+        });
+      }
+    }, interval);
+  };
+  
+  const resetUpload = () => {
+    setFile(null);
+    setFileName("");
+    setFileSize(0);
+    setUploading(false);
+    setUploadComplete(false);
+    setUploadProgress(0);
+    setUploadError(null);
+  };
+  
+  // Format file size to readable format
+  const formatFileSize = (bytes) => {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
   };
   
   const recentRfps = [
@@ -92,23 +176,18 @@ const UploadComponent = () => {
                         <h3 className="text-lg font-medium mb-2">Drag and drop your file here</h3>
                         <p className="text-muted-foreground mb-6">or click to browse your files</p>
                         
+                        {/* Hidden file input element */}
                         <input 
                           type="file" 
                           id="file-upload" 
-                          accept=".pdf,.doc,.docx,.txt" 
-                          className="hidden" 
-                          onChange={handleFileChange}
-                          ref={fileInputRef}
+                          accept=".pdf,.doc,.docx,.txt"
                         />
                         
-                        {/* Temporarily using a native button for testing */}
+                        {/* Use regular HTML button for maximum compatibility */}
                         <button 
+                          className="bg-blue-600 hover:bg-blue-700 text-white font-medium py-2 px-4 rounded"
+                          onClick={triggerFileInput}
                           type="button"
-                          className="cursor-pointer p-2 border rounded"
-                          onClick={() => {
-                            console.log("Native button clicked");
-                            fileInputRef.current && fileInputRef.current.click();
-                          }}
                         >
                           Browse Files
                         </button>
@@ -136,7 +215,7 @@ const UploadComponent = () => {
                         <Button 
                           variant="ghost" 
                           size="icon"
-                          onClick={resetAttachment}
+                          onClick={resetUpload}
                         >
                           <X className="h-4 w-4" />
                         </Button>
@@ -180,7 +259,7 @@ const UploadComponent = () => {
                       ) : null}
                       
                       <div className="mt-6 flex flex-col sm:flex-row gap-3 justify-end">
-                        <Button variant="outline" onClick={resetAttachment}>
+                        <Button variant="outline" onClick={resetUpload}>
                           Cancel
                         </Button>
                         <Link to="/dashboard">
