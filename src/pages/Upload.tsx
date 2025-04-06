@@ -1,11 +1,11 @@
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import DashboardSidebar from "@/components/dashboard/DashboardSidebar";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { FileText, Upload, X, CheckCircle, FileUp, FilePlus, Clock } from "lucide-react";
+import { FileText, UploadIcon, X, CheckCircle, FileUp, FilePlus, Clock } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 
 const Upload = () => {
@@ -47,11 +47,9 @@ const Upload = () => {
   };
   
   const handleFileUpload = (file: File) => {
-    // Simulate file upload process
     setFileName(file.name);
     setUploading(true);
     
-    // Mock API upload
     setTimeout(() => {
       setUploading(false);
       setUploadComplete(true);
@@ -61,7 +59,6 @@ const Upload = () => {
         description: `${file.name} has been uploaded and is being processed.`,
       });
       
-      // Simulate processing and redirect after some time
       setTimeout(() => {
         // In a real app, we would redirect to results page
         // history.push('/dashboard');
@@ -74,7 +71,6 @@ const Upload = () => {
     setUploadComplete(false);
   };
   
-  // Recent RFPs mock data
   const recentRfps = [
     {
       id: 1,
@@ -141,7 +137,7 @@ const Upload = () => {
                           onChange={handleFileChange}
                         />
                         <label htmlFor="file-upload">
-                          <Button as="span">
+                          <Button className="cursor-pointer">
                             Browse Files
                           </Button>
                         </label>
