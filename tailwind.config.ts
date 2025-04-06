@@ -19,6 +19,9 @@ export default {
 			}
 		},
 		extend: {
+			fontFamily: {
+				sans: ['Outfit', 'sans-serif'],
+			},
 			colors: {
 				border: 'hsl(var(--border))',
 				input: 'hsl(var(--input))',
@@ -66,19 +69,19 @@ export default {
 				// Custom colors for RFP IntelliCheck
 				rfp: {
 					blue: {
-						DEFAULT: '#0F3460',
-						light: '#1A5F7A',
+						DEFAULT: '#1E40AF',
+						light: '#3B82F6',
 					},
-					teal: '#2E8BC0',
-					amber: '#E67E22',
+					teal: '#0EA5E9',
+					amber: '#F59E0B',
 					gray: {
-						light: '#F8F9FA',
-						DEFAULT: '#E9ECEF',
-						dark: '#6C757D',
+						light: '#F8FAFC',
+						DEFAULT: '#E2E8F0',
+						dark: '#64748B',
 					},
-					red: '#E74C3C',
-					green: '#2ECC71',
-					yellow: '#F1C40F',
+					red: '#EF4444',
+					green: '#22C55E',
+					yellow: '#EAB308',
 				}
 			},
 			borderRadius: {
